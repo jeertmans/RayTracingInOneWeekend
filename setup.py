@@ -4,14 +4,14 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="flpy",
-    version="1.0.3",
+    name="RayTracingInOneWeekend",
+    version="0.1",
     author="Jérome Eertmans",
     author_email="jeertmans@icloud.com",
-    description="Functional but Lazy Python",
+    description="Python (Numba) implementation of the RayTracing in One Weekend book",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/jeertmans/flpy",
+    url="https://github.com/jeertmans/RayTracingInOneWeekend",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
