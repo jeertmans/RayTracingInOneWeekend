@@ -1,47 +1,82 @@
 import numpy as np
 import numba as nb
+from numba.experimental import jitclass
 
 
 real = nb.float64
-real_np = np.float64
+Real = np.float64
+
+Vector = np.ndarray
+Color = np.ndarray
+Point = np.ndarray
 
 
-@nb.njit(real[:](real, real, real), inline="always")
-def vector(x: real_np, y: real_np, z: real_np) -> np.ndarray:
-    return np.array([x, y, z])
+@nb.njit(real[:](real, real, real), inline="always", cache=True)
+def vector(x: Real, y: Real, z: Real) -> Vector:
+    return np.array([x, y, z], dtype=Real)
 
-ray = vector
+
 color = vector
+point = vector
 
 
-@nb.njit(real(real[:]), inline="always")
-def length_squared(vector: np.ndarray) -> real_np:
+@nb.njit(real(real[:]), inline="always", cache=True)
+def length_squared(vector: Vector) -> Real:
     return vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]
 
 
-@nb.njit(real(real[:]), inline="always")
-def length(vector: np.ndarray) -> real_np:
+@nb.njit(real(real[:]), inline="always", cache=True)
+def length(vector: Vector) -> Real:
     return np.sqrt(length_squared(vector))
 
 
-@nb.njit(real(real[:], real[:]), inline="always")
-def dot(u: np.ndarray, v: np.ndarray) -> real_np:
+@nb.njit(real(real[:], real[:]), inline="always", cache=True)
+def dot(u: Vector, v: Vector) -> Real:
     return u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
 
 
-@nb.njit(real[:](real[:], real[:]), inline="always")
-def cross(u: np.ndarray, v: np.ndarray) -> np.ndarray:
-    return np.array(
-        [
-            u[1] * v[2] - u[2] * v[1],
-            u[2] * v[0] - u[0] * v[2],
-            u[0] * v[1] - u[1] * v[0],
-        ]
+@nb.njit(real[:](real[:], real[:]), inline="always", cache=True)
+def cross(u: Vector, v: Vector) -> Vector:
+    return vector(
+        u[1] * v[2] - u[2] * v[1],
+        u[2] * v[0] - u[0] * v[2],
+        u[0] * v[1] - u[1] * v[0],
     )
 
 
-@nb.njit(real[:](real[:]), inline="always")
-def unit_nvector(vector: np.ndarray) -> np.ndarray:
+@nb.njit(real[:](real[:]), inline="always", parallel=True, cache=True)
+def unit_vector(vector: Vector) -> Vector:
     return vector / length(vector)
 
 
+@nb.njit(real[:](real[:], real[:], real), inline="always", parallel=True, cache=True)
+def vector_at_t(origin: Point, direction: Vector, t: Real) -> Vector:
+    return origin + direction * t
+
+
+@nb.njit(
+    real(real[:], real, real[:], real[:]), inline="always", parallel=True, cache=True
+)
+def hit_sphere(center: Point, radius: Real, origin: Point, direction: Vector) -> Real:
+    oc = origin - center
+    a = length_squared(direction)
+    b = 2.0 * dot(oc, direction)
+    c = length_squared(oc) - radius * radius
+    discriminant = b * b - 4 * a * c
+    if discriminant < 0.0:
+        return Real(-1.0)
+    else:
+        return Real((-b - np.sqrt(discriminant)) / (2.0 * a))
+
+
+@nb.njit(real[:](real[:], real[:]), inline="always", parallel=True, cache=True)
+def ray_color(origin: Point, direction: Vector) -> np.ndarray:
+    t = hit_sphere(point(0, 0, -1), 0.5, origin, direction)
+
+    if t > 0.0:
+        n = unit_vector(vector_at_t(origin, direction, t) - vector(0, 0, -1))
+        return 0.5 * color(n[0] + 1, n[1] + 1, n[2] + 1)
+
+    unit_direction = unit_vector(direction)
+    t = 0.5 * (unit_direction[1] + 1.0)
+    return (1.0 - t) * color(1.0, 1.0, 1.0) + t * color(0.5, 0.7, 1.0)
