@@ -4,7 +4,7 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setuptools.setup(
-    name="RayTracingInOneWeekend",
+    name="rtionewe",
     version="0.1",
     author="Jérome Eertmans",
     author_email="jeertmans@icloud.com",
@@ -19,4 +19,5 @@ setuptools.setup(
     ],
     license="MIT",
     python_requires=">=3.8",
+    entry_points={"console_scripts": ["rt1we=rtionewe.cli:cli"]},
 )
