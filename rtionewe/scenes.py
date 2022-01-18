@@ -1,12 +1,12 @@
 import numpy as np
 import numba as nb
 from numba.experimental import jitclass
-from .vectors import vector, ray_color, real
+from .vectors import vector, ray_color, real, Real, color
 
 
 @nb.njit(parallel=True, cache=True)
 def example_scene(height=256, width=256):
-    array = np.empty((width, height, 3), dtype=np.float64)
+    array = np.zeros((width, height, 3), dtype=np.float64)
 
     aspect_ratio = width / height
     viewport_height = 2.0
@@ -19,13 +19,32 @@ def example_scene(height=256, width=256):
     lower_left_corner = (
         origin - horizontal / 2 - vertical / 2 - vector(0, 0, focal_length)
     )
+    samples_per_pixel = 100
+    
+    centers = np.empty((2, 3), dtype=Real)
+    radiuses = np.empty(2, dtype=Real)
+
+    centers[0, :] = np.array([0, 0, -1])
+    radiuses[0] = 0.5
+
+    centers[1, :] = np.array([0, -100.5, -1])
+    radiuses[1] = 100
+
+    world = centers, radiuses
 
     for i in nb.prange(width):
         for j in nb.prange(height):
-            u = i / (width - 1)
-            v = j / (height - 1)
-            destination = lower_left_corner + u * horizontal + v * vertical
-            array[i, j, :] = ray_color(origin, destination - origin)
+            r = g = b = Real(0)
+            for s in nb.prange(samples_per_pixel):
+
+                u = (i + np.random.rand()) / (width - 1)
+                v = (j + np.random.rand()) / (height - 1)
+                destination = lower_left_corner + u * horizontal + v * vertical
+                c = ray_color(origin, destination - origin, world, 5)
+                r += c[0]
+                g += c[1]
+                b += c[2]
+            array[i, j, :] = color(r, g, b) / samples_per_pixel
 
     return array
 
