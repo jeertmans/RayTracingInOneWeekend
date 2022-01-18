@@ -5,7 +5,13 @@ import click
 @click.option("-W", "--width", default=256, type=int, help="Image width.")
 @click.option("-H", "--height", default=256, type=int, help="Image height.")
 @click.option("-S", "--size", default=None, type=int, help="Image size.")
-@click.option("-o", "--output", default="out.png", type=click.Path(dir_okay=False), help="Output image file.")
+@click.option(
+    "-o",
+    "--output",
+    default="out.png",
+    type=click.Path(dir_okay=False),
+    help="Output image file.",
+)
 @click.pass_context
 def cli(ctx, width, height, size, output):
     if ctx.invoked_subcommand is not None:

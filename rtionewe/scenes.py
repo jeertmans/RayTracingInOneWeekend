@@ -20,7 +20,7 @@ def example_scene(height=256, width=256):
         origin - horizontal / 2 - vertical / 2 - vector(0, 0, focal_length)
     )
     samples_per_pixel = 100
-    
+
     centers = np.empty((2, 3), dtype=Real)
     radiuses = np.empty(2, dtype=Real)
 
